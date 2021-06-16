@@ -1,0 +1,67 @@
+---
+title: "Script-Atmospheric-Correction"
+author: "Fernando Herrera"
+date: "16/6/2021"
+output:
+  html_document:
+    df_print: paged
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Este código fue elaborado para la descarga de imágenes satelitales, se puede seguir el mismo proceso para cualquier otro tipo de imagen.
+
+```{r}
+##Load librarys!
+library(rgee)
+library(mapview)
+library(mapedit)
+##Initialize API GEE
+ee_Initialize("FHerrera", drive = TRUE)
+##find the img!
+aoi <- ee$Geometry$Point(-74.2, -13.1)
+img_co <- ee$ImageCollection("LANDSAT/LC08/C01/T1")$
+    filterDate("2018-01-01","2020-01-01")$
+    filterBounds(aoi)$
+    filterMetadata("CLOUD_COVER", "less_than", 10)$
+    sort("CLOUD_COVER")
+##list of the img col
+ee_get_date_ic(img_co)
+#thats the img!
+img_1<- ee$Image("LANDSAT/LC08/C01/T1/LC08_005069_20190806")
+
+```
+### En caso de querer seleccionar un polígono de interés, usar las siguientes líneas
+
+```{r, eval = FALSE}
+area <- mapview() %>% 
+editMap()
+area_sf <- area$all
+mapview(area_sf)
+```
+
+### Importante convertir el simple feature en un objeto ee
+```{r, eval = FALSE}
+aoi_ee <- sf_as_ee(area_sf)
+```
+
+## Visualización de la imagen 
+```{r}
+geovizRGB <- list(bands = c("B4", "B3", "B2"),
+               min = 0.0,
+               max = 30000.0,
+               gamma = 0.75)
+Map$setCenter(-74.2, -13.1, zoom = 8)
+Map$addLayer(img_1, geovizRGB, "Original_image")
+```
+
+### Descarga de la imagen
+
+```{r, eval = FALSE}
+layer <- ee$Image("LANDSAT/LC08/C01/T1/LC08_005069_20190806")
+capa_descargar <- ee_as_raster(image = layer$float()
+                               , via = "drive")
+```
